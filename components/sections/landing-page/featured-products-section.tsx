@@ -1,19 +1,8 @@
-"use client"
+'use client'
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { ProductCard } from "@/components/shared/product-card"
-
-const PRODUCTS = [
-  { id: "1", name: "Shaggy Wool Cardigan",       price: "$282.00", images: ["/products/product1.1.webp", "/products/product1.2.webp"] },
-  { id: "2", name: "Lightweight Turtleneck Top", price: "$92.00",  images: ["/products/product1.2.webp"] },
-  { id: "3", name: "Mohair Shaggy Knit",         price: "$230.00", images: ["/products/product1.3.webp", "/products/product1.4.webp"] },
-  { id: "4", name: "Striped Waffle LS Tee",      price: "$75.00",  images: ["/products/product1.4.webp"] },
-  { id: "5", name: "Cashmere Zip Sweater",       price: "$212.00", images: ["/products/product1.1.webp", "/products/product1.3.webp"] },
-  { id: "6", name: "Ribbed Mock-Neck Sweater",   price: "$148.00", images: ["/products/product1.2.webp"] },
-  { id: "7", name: "Relaxed Linen Shirt",        price: "$110.00", images: ["/products/product1.3.webp", "/products/product1.1.webp"] },
-  { id: "8", name: "Wide-Leg Wool Trousers",     price: "$195.00", images: ["/products/product1.4.webp"] },
-]
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { ProductCard, type ProductCardProduct } from '@/components/shared/product-card'
 
 const gridVariants = {
   hidden: {},
@@ -32,34 +21,50 @@ const cardVariants = {
   },
 }
 
-export function FeaturedProductsSection() {
+interface FeaturedProductsSectionProps {
+  products: ProductCardProduct[]
+}
+
+export function FeaturedProductsSection({ products }: FeaturedProductsSectionProps) {
   return (
     <section className="section-py">
       <div className="page-container">
 
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-bold leading-snug tracking-[-0.025em] md:text-3xl lg:text-4xl">Featured products</h2>
+        <div className="mb-10 flex flex-col items-start justify-between gap-4 md:mb-14 md:flex-row md:items-end">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+              Curated Selection
+            </p>
+            <h2 className="font-display text-3xl font-extrabold tracking-[-0.03em] md:text-4xl lg:text-5xl text-foreground">
+              Featured Pieces
+            </h2>
+          </div>
           <Link
             href="/shop"
-            className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+            className="group inline-flex items-center gap-2 border-b border-foreground/30 pb-1 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-all hover:border-foreground"
           >
-            View all
+            Explore Collection
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </div>
 
-        <motion.div
-          className="product-grid"
-          variants={gridVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-80px" }}
-        >
-          {PRODUCTS.map(product => (
-            <motion.div key={product.id} variants={cardVariants}>
-              <ProductCard {...product} />
-            </motion.div>
-          ))}
-        </motion.div>
+        {products.length > 0 ? (
+          <motion.div
+            className="product-grid"
+            variants={gridVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+          >
+            {products.map((product) => (
+              <motion.div key={product._id} variants={cardVariants}>
+                <ProductCard {...product} />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No featured products yet.</p>
+        )}
 
       </div>
     </section>

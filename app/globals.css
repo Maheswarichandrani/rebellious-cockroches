@@ -359,18 +359,18 @@
     opacity   260ms ease;
 }
 
-.nav-panel[data-open] {
+.nav-panel[data-state=open] {
   transform: translateX(0);
   opacity: 1;
 }
 
-.nav-panel[data-closed] {
+.nav-panel[data-state=closed] {
   transform: translateX(100%);
   opacity: 0;
 }
 
 @starting-style {
-  .nav-panel[data-open] {
+  .nav-panel[data-state=open] {
     transform: translateX(100%);
     opacity: 0;
   }
@@ -386,11 +386,11 @@
   transition: opacity 280ms ease;
 }
 
-.nav-backdrop[data-open]  { opacity: 1; }
-.nav-backdrop[data-closed] { opacity: 0; }
+.nav-backdrop[data-state=open]  { opacity: 1; }
+.nav-backdrop[data-state=closed] { opacity: 0; }
 
 @starting-style {
-  .nav-backdrop[data-open] { opacity: 0; }
+  .nav-backdrop[data-state=open] { opacity: 0; }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
