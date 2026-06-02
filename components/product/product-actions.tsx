@@ -1,49 +1,48 @@
 'use client'
 
 import { useState } from 'react'
-import { FiShoppingBag, FiMinus, FiPlus } from 'react-icons/fi'
+import { useRouter } from 'next/navigation'
+import { FiShoppingBag, FiMinus, FiPlus, FiShare2, FiCheck, FiTruck, FiRefreshCw, FiShield, FiZap } from 'react-icons/fi'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/hooks/use-cart'
+import { useShare } from '@/hooks/use-share'
 import { urlFor } from '@/sanity/lib/image'
+import { SizeGuideDialog } from './size-guide-dialog'
 import type { PRODUCT_BY_SLUG_QUERY_RESULT } from '@/sanity.types'
+import type { ProductVariantState } from '@/hooks/use-product-variant'
 
 type Product = NonNullable<PRODUCT_BY_SLUG_QUERY_RESULT>
-type ColorVariant = Product['colorVariants'][number]
-type SizeEntry = ColorVariant['sizes'][number]
 
 interface ProductActionsProps {
   product: Product
-  onVariantChange?: (variantIndex: number) => void
+  variantState: ProductVariantState
 }
 
-export function ProductActions({ product, onVariantChange }: ProductActionsProps) {
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0)
-  const [selectedSize, setSelectedSize] = useState<string | null>(null)
-  const [qty, setQty] = useState(1)
+export function ProductActions({ product, variantState }: ProductActionsProps) {
   const [added, setAdded] = useState(false)
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
 
   const { addItem, openCart } = useCartStore()
+  const { share, copied } = useShare(product.name ?? '')
+  const router = useRouter()
 
-  const variant = product.colorVariants[selectedVariantIndex]
+  const {
+    variant, variantIndex, selectVariant,
+    selectedSize, setSelectedSize,
+    qty, incrementQty, decrementQty,
+    selectedSizeEntry,
+    isSoldOut, canAddToCart,
+  } = variantState
 
-  function handleVariantChange(idx: number) {
-    setSelectedVariantIndex(idx)
-    setSelectedSize(null)
-    setQty(1)
-    onVariantChange?.(idx)
-  }
-
-  function handleAddToCart() {
-    if (!selectedSize || !variant) return
-
-    const imageUrl =
-      variant.images[0]?.asset
-        ? urlFor(variant.images[0]).width(400).height(533).fit('crop').auto('format').url()
-        : ''
-
-    addItem({
+  function buildCartItem() {
+    if (!canAddToCart || !variant || !selectedSize) return null
+    const imageUrl = variant.images[0]?.asset
+      ? urlFor(variant.images[0]).width(400).height(533).fit('crop').auto('format').url()
+      : ''
+    return {
       productId: product._id,
       productSlug: product.slug,
       name: product.name,
@@ -54,21 +53,31 @@ export function ProductActions({ product, onVariantChange }: ProductActionsProps
       priceSnapshot: product.price,
       compareAtPriceSnapshot: product.compareAtPrice ?? undefined,
       imageSnapshot: imageUrl,
-    })
+    }
+  }
 
+  function handleAddToCart() {
+    const item = buildCartItem()
+    if (!item) return
+    addItem(item)
     setAdded(true)
     openCart()
     setTimeout(() => setAdded(false), 2000)
   }
 
-  const selectedSizeEntry = variant?.sizes.find((s) => s.size === selectedSize)
-  const isSoldOut = selectedSizeEntry?.stock === 0
-  const canAdd = selectedSize && !isSoldOut
+  function handleBuyNow() {
+    const item = buildCartItem()
+    if (!item) return
+    addItem(item)
+    router.push('/checkout')
+  }
+
+  const isLowStock = selectedSizeEntry !== null && selectedSizeEntry.stock > 0 && selectedSizeEntry.stock <= 5
 
   return (
     <div className="flex flex-col gap-5">
 
-      {/* Color */}
+      {/* Color swatches */}
       {product.colorVariants.length > 0 && (
         <div>
           <div className="mb-2.5 flex items-center gap-1.5">
@@ -81,12 +90,12 @@ export function ProductActions({ product, onVariantChange }: ProductActionsProps
             {product.colorVariants.map((v, idx) => (
               <button
                 key={v._key}
-                onClick={() => handleVariantChange(idx)}
+                onClick={() => selectVariant(idx)}
                 aria-label={`Select colour ${v.name}`}
-                aria-pressed={idx === selectedVariantIndex}
+                aria-pressed={idx === variantIndex}
                 className={cn(
-                  'relative h-8 w-8 rounded-full border-2 transition-all duration-150',
-                  idx === selectedVariantIndex
+                  'h-8 w-8 rounded-full border-2 transition-all duration-150',
+                  idx === variantIndex
                     ? 'border-foreground shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_hsl(var(--foreground))]'
                     : 'border-border hover:border-foreground/50'
                 )}
@@ -97,14 +106,23 @@ export function ProductActions({ product, onVariantChange }: ProductActionsProps
         </div>
       )}
 
-      {/* Size */}
+      {/* Size selector */}
       {variant?.sizes && variant.sizes.length > 0 && (
         <div>
           <div className="mb-2.5 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground">
               Size
             </span>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-[11px] text-muted-foreground hover:text-foreground"
+              onClick={() => setSizeGuideOpen(true)}
+            >
+              Size Guide
+            </Button>
           </div>
+
           <div className="flex flex-wrap gap-2">
             {variant.sizes.map((s) => {
               const outOfStock = s.stock === 0
@@ -128,59 +146,114 @@ export function ProductActions({ product, onVariantChange }: ProductActionsProps
                   {s.size}
                   {outOfStock && (
                     <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="h-px w-3/4 bg-muted-foreground/30 rotate-[-25deg]" />
+                      <span className="h-px w-3/4 rotate-[-25deg] bg-muted-foreground/30" />
                     </span>
                   )}
                 </button>
               )
             })}
           </div>
-          {!selectedSize && (
-            <p className="mt-2 text-[11px] text-muted-foreground">Please select a size.</p>
-          )}
+
+          <div className="mt-2 flex items-center gap-2">
+            {!selectedSize && (
+              <p className="text-[11px] text-muted-foreground">Please select a size.</p>
+            )}
+            {isLowStock && (
+              <Badge variant="outline" className="border-amber-500 text-amber-600 text-[10px]">
+                Only {selectedSizeEntry!.stock} left
+              </Badge>
+            )}
+          </div>
         </div>
       )}
 
       <Separator />
 
-      {/* Qty + Add to Cart */}
-      <div className="flex items-center gap-3">
+      {/* Qty + Add to Cart + Share */}
+      <div className="flex items-center gap-2">
         {/* Qty stepper */}
-        <div className="flex items-center rounded-md border border-border overflow-hidden shrink-0">
-          <button
-            onClick={() => setQty(Math.max(1, qty - 1))}
-            className="flex h-11 w-10 items-center justify-center text-foreground/70 hover:bg-accent hover:text-foreground transition-colors"
+        <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-border">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-10 rounded-none"
+            onClick={decrementQty}
             aria-label="Decrease quantity"
           >
             <FiMinus size={13} />
-          </button>
+          </Button>
           <span className="min-w-[2.5rem] text-center text-sm font-semibold tabular-nums text-foreground">
             {qty}
           </span>
-          <button
-            onClick={() => setQty(qty + 1)}
-            className="flex h-11 w-10 items-center justify-center text-foreground/70 hover:bg-accent hover:text-foreground transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-10 rounded-none"
+            onClick={incrementQty}
             aria-label="Increase quantity"
           >
             <FiPlus size={13} />
-          </button>
+          </Button>
         </div>
 
         {/* Add to Cart */}
         <Button
           size="lg"
           className={cn(
-            'flex-1 h-11 gap-2 text-xs font-bold uppercase tracking-[0.1em] transition-all duration-200',
-            !canAdd && 'opacity-60'
+            'h-11 flex-1 gap-2 text-xs font-bold uppercase tracking-[0.1em]',
+            !canAddToCart && 'opacity-60'
           )}
           onClick={handleAddToCart}
-          disabled={!canAdd}
+          disabled={!canAddToCart}
         >
           <FiShoppingBag size={15} />
           {added ? 'Added!' : isSoldOut ? 'Sold Out' : 'Add to Cart'}
         </Button>
+
+        {/* Share */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0"
+          onClick={share}
+          aria-label="Share product"
+        >
+          {copied ? <FiCheck size={15} /> : <FiShare2 size={15} />}
+        </Button>
       </div>
 
+      {/* Buy It Now */}
+      <Button
+        size="lg"
+        variant="outline"
+        className={cn(
+          'h-11 w-full gap-2 text-xs font-bold uppercase tracking-[0.1em]',
+          !canAddToCart && 'opacity-60'
+        )}
+        onClick={handleBuyNow}
+        disabled={!canAddToCart}
+      >
+        <FiZap size={14} />
+        Buy It Now
+      </Button>
+
+      {/* Trust badges */}
+      <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-muted/40 px-3.5 py-3 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <FiTruck size={12} className="shrink-0" />
+          Free shipping above ₹999
+        </span>
+        <span className="flex items-center gap-2">
+          <FiRefreshCw size={12} className="shrink-0" />
+          Easy 7-day returns
+        </span>
+        <span className="flex items-center gap-2">
+          <FiShield size={12} className="shrink-0" />
+          Secure checkout
+        </span>
+      </div>
+
+      <SizeGuideDialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen} />
     </div>
   )
 }

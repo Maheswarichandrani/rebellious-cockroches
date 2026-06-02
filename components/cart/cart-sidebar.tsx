@@ -24,6 +24,7 @@ export function CartSidebar() {
       <SheetContent
         side="right"
         showCloseButton={false}
+        aria-describedby={undefined}
         className="flex w-full flex-col p-0 sm:max-w-[400px]"
       >
         {/* Header */}

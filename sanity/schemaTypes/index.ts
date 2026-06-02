@@ -6,6 +6,7 @@ import { seoFieldsType } from './objects/seoFields'
 import { categoryType } from './documents/category'
 import { productType } from './documents/product'
 import { orderType } from './documents/order'
+import { shippingMethodType } from './documents/shippingMethod'
 import { heroContentType } from './singletons/heroContent'
 import { siteSettingsType } from './singletons/siteSettings'
 
@@ -19,6 +20,7 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     categoryType,
     productType,
     orderType,
+    shippingMethodType,
     // Singletons
     heroContentType,
     siteSettingsType,

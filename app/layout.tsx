@@ -3,11 +3,6 @@ import { Geist, Geist_Mono, JetBrains_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { cn } from '@/lib/utils'
-import { Navbar } from '@/components/layout/navbar'
-import { Footer } from '@/components/layout/footer'
-import { CartSidebar } from '@/components/cart/cart-sidebar'
-import { CartMergeEffect } from '@/components/cart/cart-merge-effect'
-import { SanityLive } from '@/sanity/lib/live'
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
@@ -34,6 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={cn(
         'h-full antialiased',
         geistSans.variable,
@@ -43,12 +39,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <ClerkProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <CartSidebar />
-          <CartMergeEffect />
-          <SanityLive />
+          {children}
         </ClerkProvider>
       </body>
     </html>

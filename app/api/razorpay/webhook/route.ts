@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { render } from '@react-email/components'
 import { verifyWebhookSignature } from '@/lib/razorpay/verify'
 import { writeClient } from '@/sanity/lib/write'
 import { client } from '@/sanity/lib/client'
-import { ORDER_BY_RAZORPAY_ORDER_ID_QUERY } from '@/sanity/lib/queries'
+import { ORDER_BY_RAZORPAY_ORDER_ID_QUERY, ORDER_BY_PAYMENT_ID_QUERY } from '@/sanity/lib/queries'
+import { resend } from '@/lib/email/resend'
+import { PaymentFailed } from '@/lib/email/templates/payment-failed'
+import { RefundNotification } from '@/lib/email/templates/refund-notification'
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
@@ -95,16 +99,32 @@ export async function POST(req: NextRequest) {
           .patch(order._id)
           .set({ paymentStatus: 'failed', status: 'cancelled', updatedAt: new Date().toISOString() })
           .commit()
+
+        // Notify customer (non-blocking)
+        if (order.customerInfo?.email && order.orderNumber) {
+          const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'noreply@cjpbrand.in'
+          const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+          resend.emails.send({
+            from:    `CJP Brand Store <${fromEmail}>`,
+            to:      order.customerInfo.email,
+            subject: `Payment failed for order ${order.orderNumber}`,
+            html:    await render(PaymentFailed({
+              customerName: order.customerInfo.name ?? 'Customer',
+              orderNumber:  order.orderNumber,
+              baseUrl,
+            })),
+          }).catch((err) => console.error('[webhook] PaymentFailed email failed:', err))
+        }
       }
     }
 
     if (eventType === 'refund.processed') {
-      const refund  = event.payload?.refund?.entity
+      const refund    = event.payload?.refund?.entity
       const paymentId = refund?.payment_id
       if (!paymentId) return NextResponse.json({ ok: true })
 
       const order = await client.fetch(
-        `*[_type == "order" && paymentId == $paymentId][0]{ _id }`,
+        ORDER_BY_PAYMENT_ID_QUERY,
         { paymentId },
         { cache: 'no-store' }
       )
@@ -114,6 +134,24 @@ export async function POST(req: NextRequest) {
           .patch(order._id)
           .set({ paymentStatus: 'refunded', status: 'refunded', updatedAt: new Date().toISOString() })
           .commit()
+
+        // Notify customer (non-blocking)
+        if (order.customerInfo?.email && order.orderNumber) {
+          const fromEmail    = process.env.RESEND_FROM_EMAIL ?? 'noreply@cjpbrand.in'
+          const baseUrl      = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+          const refundAmount = typeof refund?.amount === 'number' ? refund.amount / 100 : (order.total ?? 0)
+          resend.emails.send({
+            from:    `CJP Brand Store <${fromEmail}>`,
+            to:      order.customerInfo.email,
+            subject: `Refund initiated for order ${order.orderNumber}`,
+            html:    await render(RefundNotification({
+              customerName: order.customerInfo.name ?? 'Customer',
+              orderNumber:  order.orderNumber,
+              refundAmount,
+              baseUrl,
+            })),
+          }).catch((err) => console.error('[webhook] RefundNotification email failed:', err))
+        }
       }
     }
   } catch (err) {

@@ -1,5 +1,32 @@
 import { defineQuery } from 'next-sanity'
 
+export const ORDER_BY_PAYMENT_ID_QUERY = defineQuery(
+  `*[_type == "order" && paymentId == $paymentId][0]{
+    _id,
+    orderNumber,
+    paymentStatus,
+    status,
+    total,
+    subtotal,
+    shippingCost,
+    customerInfo{
+      name, email, phone,
+      address{ line1, line2, city, state, pincode, country }
+    }
+  }`
+)
+
+export const PRODUCT_SEARCH_QUERY = defineQuery(
+  `*[_type == "product" && name match $q] | order(_createdAt desc) [0...6] {
+    _id,
+    name,
+    "slug": slug.current,
+    price,
+    compareAtPrice,
+    "image": colorVariants[0].images[0]
+  }`
+)
+
 export const HERO_CONTENT_QUERY = defineQuery(
   `*[_type == "heroContent" && _id == "heroContent-singleton"][0]{
     _id,
@@ -97,7 +124,22 @@ export const SITE_SETTINGS_QUERY = defineQuery(
   }`
 )
 
-// ── Checkout queries ─────────────────────────────────────────────────────────
+// ── Shipping methods ──────────────────────────────────────────────────────────
+
+export const SHIPPING_METHODS_QUERY = defineQuery(
+  `*[_type == "shippingMethod" && isEnabled == true] | order(sortOrder asc) {
+    _id,
+    name,
+    description,
+    price,
+    freeAboveOrderTotal,
+    estimatedMinDays,
+    estimatedMaxDays,
+    deliveryZones
+  }`
+)
+
+// ── Checkout queries ──────────────────────────────────────────────────────────
 
 export const PRODUCTS_BY_IDS_QUERY = defineQuery(
   `*[_type == "product" && _id in $ids]{
@@ -136,8 +178,13 @@ export const ORDER_BY_NUMBER_QUERY = defineQuery(
     },
     subtotal,
     shippingCost,
+    taxAmount,
     total,
     currency,
+    shippingMethodId,
+    shippingMethodName,
+    newsletterOptIn,
+    billingAddress{ name, line1, line2, city, state, pincode, country },
     paymentStatus,
     status,
     paymentId,
@@ -154,6 +201,7 @@ export const ORDER_BY_RAZORPAY_ORDER_ID_QUERY = defineQuery(
     clerkUserId,
     paymentStatus,
     status,
+    newsletterOptIn,
     lineItems[]{
       _key,
       productId,
@@ -166,8 +214,11 @@ export const ORDER_BY_RAZORPAY_ORDER_ID_QUERY = defineQuery(
     },
     subtotal,
     shippingCost,
+    taxAmount,
     total,
     currency,
+    shippingMethodId,
+    shippingMethodName,
     customerInfo{
       name, email, phone,
       address{ line1, line2, city, state, pincode, country }
@@ -175,7 +226,7 @@ export const ORDER_BY_RAZORPAY_ORDER_ID_QUERY = defineQuery(
   }`
 )
 
-// ── Account / orders ─────────────────────────────────────────────────────────
+// ── Account / orders ──────────────────────────────────────────────────────────
 
 export const ORDERS_BY_USER_QUERY = defineQuery(
   `*[_type == "order" && (clerkUserId == $userId || customerInfo.email == $email)] | order(createdAt desc) {
@@ -191,6 +242,7 @@ export const ORDERS_BY_USER_QUERY = defineQuery(
     },
     subtotal,
     shippingCost,
+    taxAmount,
     total,
     paymentStatus,
     status,

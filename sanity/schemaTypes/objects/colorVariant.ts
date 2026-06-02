@@ -27,7 +27,7 @@ export const colorVariantType = defineType({
       of: [
         defineArrayMember({
           type: 'image',
-          options: { hotspot: true },
+          options: { hotspot: true, modal: { type: 'inline' } },
           fields: [
             defineField({
               name: 'alt',
@@ -42,7 +42,7 @@ export const colorVariantType = defineType({
     defineField({
       name: 'sizes',
       type: 'array',
-      of: [defineArrayMember({ type: 'sizeEntry' })],
+      of: [defineArrayMember({ type: 'sizeEntry', options: { modal: { type: 'inline' } } })],
       validation: (r) => r.required().min(1),
     }),
   ],

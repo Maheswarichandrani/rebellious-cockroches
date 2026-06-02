@@ -1,5 +1,5 @@
 import {
-  Body, Container, Head, Heading, Hr, Html, Preview, Section, Text,
+  Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text,
 } from '@react-email/components'
 import { formatPrice } from '@/lib/formatters'
 
@@ -36,10 +36,12 @@ interface OrderConfirmationProps {
     total:        number
     createdAt?:   string
   }
+  baseUrl: string
 }
 
-export function OrderConfirmation({ order }: OrderConfirmationProps) {
+export function OrderConfirmation({ order, baseUrl }: OrderConfirmationProps) {
   const { orderNumber, paymentId, customerInfo, lineItems, subtotal, shippingCost, total } = order
+  const viewOrderUrl = `${baseUrl}/order/success/${orderNumber}?email=${Buffer.from(customerInfo.email).toString('base64url')}`
 
   return (
     <Html>
@@ -126,6 +128,12 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
 
             <Hr style={divider} />
 
+            <Section style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <Button href={viewOrderUrl} style={ctaButton}>
+                View Your Order
+              </Button>
+            </Section>
+
             <Text style={footer}>
               Questions? Reply to this email or visit our Contact page.{'\n'}
               CJP Brand Store — Official Store
@@ -195,4 +203,9 @@ const totalRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-
 const totalLabel: React.CSSProperties = { color: '#888', fontSize: '13px', margin: 0 }
 const totalValue: React.CSSProperties = { color: '#555', fontSize: '13px', fontWeight: '600', margin: 0 }
 const divider: React.CSSProperties = { borderColor: '#ebe9e5', margin: '32px 0 24px' }
+const ctaButton: React.CSSProperties = {
+  backgroundColor: '#1c1c1c', color: '#ffffff', fontSize: '13px', fontWeight: '700',
+  letterSpacing: '0.06em', padding: '12px 28px', borderRadius: '6px', textDecoration: 'none',
+  display: 'inline-block',
+}
 const footer: React.CSSProperties = { color: '#aaa', fontSize: '12px', lineHeight: '1.6', margin: 0 }

@@ -30,18 +30,18 @@ export function FeaturedProductsSection({ products }: FeaturedProductsSectionPro
     <section className="section-py">
       <div className="page-container">
 
-        <div className="mb-10 flex flex-col items-start justify-between gap-4 md:mb-14 md:flex-row md:items-end">
+        <div className="mb-10 flex items-end justify-between md:mb-14">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
               Curated Selection
             </p>
             <h2 className="font-display text-3xl font-extrabold tracking-[-0.03em] md:text-4xl lg:text-5xl text-foreground">
-              Featured Pieces
+              Featured T-Shirts
             </h2>
           </div>
           <Link
             href="/shop"
-            className="group inline-flex items-center gap-2 border-b border-foreground/30 pb-1 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-all hover:border-foreground"
+            className="group hidden md:inline-flex items-center gap-2 border-b border-foreground/30 pb-1 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-all hover:border-foreground"
           >
             Explore Collection
             <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
@@ -65,6 +65,16 @@ export function FeaturedProductsSection({ products }: FeaturedProductsSectionPro
         ) : (
           <p className="text-sm text-muted-foreground">No featured products yet.</p>
         )}
+
+        <div className="mt-10 flex justify-center md:hidden">
+          <Link
+            href="/shop"
+            className="group inline-flex items-center gap-2 border-b border-foreground/30 pb-1 text-xs font-bold uppercase tracking-[0.15em] text-foreground transition-all hover:border-foreground"
+          >
+            Explore Collection
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </Link>
+        </div>
 
       </div>
     </section>

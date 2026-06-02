@@ -26,7 +26,9 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 CLERK_SECRET_KEY
 RESEND_API_KEY
 RESEND_FROM_EMAIL          # optional, defaults to noreply@cjpbrand.in
+RESEND_AUDIENCE_ID         # optional, Resend audience ID for newsletter opt-in signups
 ADMIN_EMAIL                # optional, defaults to admin@cjpbrand.in
+NEXT_PUBLIC_GEOAPIFY_API_KEY  # Geoapify address autocomplete (free tier, 3000 req/day)
 ```
 
 ## Architecture
@@ -49,7 +51,7 @@ Zustand store in `hooks/use-cart.ts`, persisted to `localStorage` under key `cjp
 
 ### Sanity Studio
 
-Embedded at `/studio` via `app/studio/[[...tool]]/page.tsx`. Schema lives in `sanity/schemaTypes/` — documents (`product`, `category`, `order`) and objects (`colorVariant`, `sizeEntry`, `seoFields`). Products use `colorVariants[]` (color + images + sizes with stock/SKU) as the main variant model.
+Embedded at `/studio` via `app/studio/[[...tool]]/page.tsx`. Schema lives in `sanity/schemaTypes/` — documents (`product`, `category`, `order`, `shippingMethod`) and objects (`colorVariant`, `sizeEntry`, `seoFields`). Products use `colorVariants[]` (color + images + sizes with stock/SKU) as the main variant model. Shipping methods are managed in Studio (`shippingMethod` documents) — admin can add/disable/reprice methods without code changes.
 
 ### Email
 

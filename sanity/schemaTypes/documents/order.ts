@@ -1,5 +1,8 @@
 import { defineArrayMember, defineField, defineType } from 'sanity'
 import { ClipboardIcon } from '@sanity/icons'
+import { OrderStatusInput } from '../../components/order-status-input'
+import { OrderAddressDisplay } from '../../components/order-address-display'
+import { OrderLineItemsDisplay } from '../../components/order-lineitems-display'
 
 export const orderType = defineType({
   name: 'order',
@@ -7,33 +10,79 @@ export const orderType = defineType({
   type: 'document',
   icon: ClipboardIcon,
   fields: [
-    defineField({ name: 'orderNumber',  type: 'string',   readOnly: true }),
-    defineField({ name: 'clerkUserId',  type: 'string',   readOnly: true }),
+    // ── Status controls at top ────────────────────────────────────────────────
+    defineField({
+      name: 'status',
+      title: 'Order Status',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Pending',    value: 'pending'    },
+          { title: 'Paid',       value: 'paid'       },
+          { title: 'Processing', value: 'processing' },
+          { title: 'Shipped',    value: 'shipped'    },
+          { title: 'Delivered',  value: 'delivered'  },
+          { title: 'Cancelled',  value: 'cancelled'  },
+          { title: 'Refunded',   value: 'refunded'   },
+        ],
+      },
+      initialValue: 'pending',
+      components: { input: OrderStatusInput },
+    }),
+    defineField({
+      name: 'paymentStatus',
+      title: 'Payment Status',
+      type: 'string',
+      readOnly: true,
+      options: {
+        list: [
+          { title: 'Pending',  value: 'pending'  },
+          { title: 'Paid',     value: 'paid'     },
+          { title: 'Failed',   value: 'failed'   },
+          { title: 'Refunded', value: 'refunded' },
+        ],
+      },
+      initialValue: 'pending',
+    }),
+
+    // ── Order identity ────────────────────────────────────────────────────────
+    defineField({ name: 'orderNumber',  type: 'string',   title: 'Order Number', readOnly: true }),
+    defineField({ name: 'clerkUserId',  type: 'string',   title: 'Clerk User ID', readOnly: true }),
+
+    // ── Customer info (display-only card) ─────────────────────────────────────
     defineField({
       name: 'customerInfo',
+      title: 'Customer Information',
       type: 'object',
+      readOnly: true,
+      components: { input: OrderAddressDisplay },
       fields: [
-        defineField({ name: 'name',  type: 'string' }),
-        defineField({ name: 'email', type: 'string' }),
-        defineField({ name: 'phone', type: 'string' }),
+        defineField({ name: 'name',  type: 'string', readOnly: true }),
+        defineField({ name: 'email', type: 'string', readOnly: true }),
+        defineField({ name: 'phone', type: 'string', readOnly: true }),
         defineField({
           name: 'address',
           type: 'object',
+          readOnly: true,
           fields: [
-            defineField({ name: 'line1',    type: 'string' }),
-            defineField({ name: 'line2',    type: 'string' }),
-            defineField({ name: 'city',     type: 'string' }),
-            defineField({ name: 'state',    type: 'string' }),
-            defineField({ name: 'pincode',  type: 'string' }),
-            defineField({ name: 'country',  type: 'string' }),
+            defineField({ name: 'line1',   type: 'string', readOnly: true }),
+            defineField({ name: 'line2',   type: 'string', readOnly: true }),
+            defineField({ name: 'city',    type: 'string', readOnly: true }),
+            defineField({ name: 'state',   type: 'string', readOnly: true }),
+            defineField({ name: 'pincode', type: 'string', readOnly: true }),
+            defineField({ name: 'country', type: 'string', readOnly: true }),
           ],
         }),
       ],
     }),
+
+    // ── Line items (display-only table) ──────────────────────────────────────
     defineField({
       name: 'lineItems',
+      title: 'Items Ordered',
       type: 'array',
       readOnly: true,
+      components: { input: OrderLineItemsDisplay },
       of: [
         defineArrayMember({
           type: 'object',
@@ -56,44 +105,44 @@ export const orderType = defineType({
         }),
       ],
     }),
-    defineField({ name: 'subtotal',     type: 'number',   readOnly: true }),
-    defineField({ name: 'shippingCost', type: 'number',   readOnly: true }),
-    defineField({ name: 'total',        type: 'number',   readOnly: true }),
-    defineField({ name: 'currency',     type: 'string',   readOnly: true, initialValue: 'INR' }),
+
+    // ── Financials ────────────────────────────────────────────────────────────
+    defineField({ name: 'subtotal',           type: 'number',  title: 'Subtotal',         readOnly: true }),
+    defineField({ name: 'shippingCost',       type: 'number',  title: 'Shipping Cost',    readOnly: true }),
+    defineField({ name: 'taxAmount',          type: 'number',  title: 'Tax Amount',       readOnly: true, description: 'GST (18%) included in subtotal' }),
+    defineField({ name: 'total',              type: 'number',  title: 'Total',            readOnly: true }),
+    defineField({ name: 'currency',           type: 'string',  title: 'Currency',         readOnly: true, initialValue: 'INR' }),
+    defineField({ name: 'shippingMethodId',   type: 'string',  title: 'Shipping Method ID',   readOnly: true }),
+    defineField({ name: 'shippingMethodName', type: 'string',  title: 'Shipping Method',  readOnly: true }),
+    defineField({ name: 'newsletterOptIn',    type: 'boolean', title: 'Newsletter Opt-in', readOnly: true }),
+
+    // ── Billing address (display-only card, optional) ─────────────────────────
     defineField({
-      name: 'paymentStatus',
-      type: 'string',
-      options: {
-        list: [
-          { title: 'Pending',  value: 'pending'  },
-          { title: 'Paid',     value: 'paid'     },
-          { title: 'Failed',   value: 'failed'   },
-          { title: 'Refunded', value: 'refunded' },
-        ],
-      },
-      initialValue: 'pending',
+      name: 'billingAddress',
+      title: 'Billing Address',
+      type: 'object',
+      description: 'Populated only when billing differs from shipping',
+      readOnly: true,
+      components: { input: OrderAddressDisplay },
+      fields: [
+        defineField({ name: 'name',    type: 'string', readOnly: true }),
+        defineField({ name: 'line1',   type: 'string', readOnly: true }),
+        defineField({ name: 'line2',   type: 'string', readOnly: true }),
+        defineField({ name: 'city',    type: 'string', readOnly: true }),
+        defineField({ name: 'state',   type: 'string', readOnly: true }),
+        defineField({ name: 'pincode', type: 'string', readOnly: true }),
+        defineField({ name: 'country', type: 'string', readOnly: true }),
+      ],
     }),
-    defineField({
-      name: 'status',
-      type: 'string',
-      options: {
-        list: [
-          { title: 'Pending',    value: 'pending'    },
-          { title: 'Paid',       value: 'paid'       },
-          { title: 'Processing', value: 'processing' },
-          { title: 'Shipped',    value: 'shipped'    },
-          { title: 'Delivered',  value: 'delivered'  },
-          { title: 'Cancelled',  value: 'cancelled'  },
-          { title: 'Refunded',   value: 'refunded'   },
-        ],
-      },
-      initialValue: 'pending',
-    }),
-    defineField({ name: 'razorpayOrderId',  type: 'string', readOnly: true }),
-    defineField({ name: 'paymentId',        type: 'string', readOnly: true }),
-    defineField({ name: 'razorpaySignature',type: 'string', readOnly: true }),
-    defineField({ name: 'createdAt',        type: 'datetime', readOnly: true }),
-    defineField({ name: 'updatedAt',        type: 'datetime', readOnly: true }),
+
+    // ── Payment / Razorpay ────────────────────────────────────────────────────
+    defineField({ name: 'razorpayOrderId',   type: 'string', title: 'Razorpay Order ID',   readOnly: true }),
+    defineField({ name: 'paymentId',         type: 'string', title: 'Payment ID',          readOnly: true }),
+    defineField({ name: 'razorpaySignature', type: 'string', title: 'Razorpay Signature',  readOnly: true }),
+
+    // ── Timestamps ────────────────────────────────────────────────────────────
+    defineField({ name: 'createdAt', type: 'datetime', title: 'Created At', readOnly: true }),
+    defineField({ name: 'updatedAt', type: 'datetime', title: 'Updated At', readOnly: true }),
   ],
   orderings: [
     {

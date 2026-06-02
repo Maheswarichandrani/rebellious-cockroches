@@ -37,7 +37,7 @@ export const productType = defineType({
     defineField({
       name: 'colorVariants',
       type: 'array',
-      of: [defineArrayMember({ type: 'colorVariant' })],
+      of: [defineArrayMember({ type: 'colorVariant', options: { modal: { type: 'popover' } } })],
       validation: (r) => r.required().min(1),
     }),
     defineField({
