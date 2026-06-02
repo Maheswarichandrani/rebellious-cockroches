@@ -8,7 +8,8 @@ import { useCartStore, selectCartTotal } from '@/hooks/use-cart'
 import { cn } from '@/lib/utils'
 
 export function CartSummary() {
-  const total = useCartStore(selectCartTotal)
+  const total      = useCartStore(selectCartTotal)
+  const closeCart  = useCartStore((s) => s.closeCart)
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-2">
@@ -29,6 +30,7 @@ export function CartSummary() {
 
       <Link
         href="/checkout"
+        onClick={closeCart}
         className={cn(
           buttonVariants({ variant: 'default', size: 'lg' }),
           'w-full justify-center text-xs font-bold uppercase tracking-[0.12em]'
@@ -39,6 +41,7 @@ export function CartSummary() {
 
       <Link
         href="/shop"
+        onClick={closeCart}
         className="text-center text-xs text-muted-foreground underline-offset-4 hover:underline transition-colors"
       >
         Continue shopping

@@ -75,7 +75,15 @@ function NavbarContent() {
                   userButtonTrigger: "focus:shadow-none",
                 },
               }}
-            />
+            >
+              <UserButton.MenuItems>
+                <UserButton.Link
+                  label="My Orders"
+                  labelIcon={<FaBagShopping size={12} />}
+                  href="/account"
+                />
+              </UserButton.MenuItems>
+            </UserButton>
           </Show>
           <Show when="signed-out">
             <SignInButton mode="modal">

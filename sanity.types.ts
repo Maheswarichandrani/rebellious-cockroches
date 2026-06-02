@@ -89,6 +89,7 @@ export type Order = {
   _updatedAt: string;
   _rev: string;
   orderNumber?: string;
+  clerkUserId?: string;
   customerInfo?: {
     name?: string;
     email?: string;
@@ -99,21 +100,25 @@ export type Order = {
       city?: string;
       state?: string;
       pincode?: string;
+      country?: string;
     };
   };
   lineItems?: Array<{
     productId?: string;
     productName?: string;
     colorVariant?: string;
+    colorVariantSlug?: string;
     size?: string;
     qty?: number;
     priceSnapshot?: number;
+    sku?: string;
     _key: string;
   }>;
   subtotal?: number;
+  shippingCost?: number;
   total?: number;
-  paymentId?: string;
-  razorpayOrderId?: string;
+  currency?: string;
+  paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   status?:
     | "pending"
     | "paid"
@@ -122,8 +127,11 @@ export type Order = {
     | "delivered"
     | "cancelled"
     | "refunded";
-  clerkUserId?: string;
+  razorpayOrderId?: string;
+  paymentId?: string;
+  razorpaySignature?: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type CategoryReference = {
@@ -537,21 +545,139 @@ export type SITE_SETTINGS_QUERY_RESULT = {
 } | null;
 
 // Source: sanity/lib/queries.ts
+// Variable: PRODUCTS_BY_IDS_QUERY
+// Query: *[_type == "product" && _id in $ids]{    _id,    name,    price,    compareAtPrice,    "colorVariants": colorVariants[]{      _key,      name,      "slug": slug.current,      sizes[]{ size, stock, sku }    }  }
+export type PRODUCTS_BY_IDS_QUERY_RESULT = Array<{
+  _id: string;
+  name: string;
+  price: number;
+  compareAtPrice: number | null;
+  colorVariants: Array<{
+    _key: string;
+    name: string;
+    slug: string;
+    sizes: Array<{
+      size: "L" | "M" | "S" | "XL" | "XS" | "XXL";
+      stock: number;
+      sku: string | null;
+    }>;
+  }>;
+}>;
+
+// Source: sanity/lib/queries.ts
+// Variable: ORDER_BY_NUMBER_QUERY
+// Query: *[_type == "order" && orderNumber == $orderNumber][0]{    _id,    orderNumber,    clerkUserId,    customerInfo{      name, email, phone,      address{ line1, line2, city, state, pincode, country }    },    lineItems[]{      _key,      productId,      productName,      colorVariant,      colorVariantSlug,      size,      qty,      priceSnapshot,      sku    },    subtotal,    shippingCost,    total,    currency,    paymentStatus,    status,    paymentId,    razorpayOrderId,    createdAt,    updatedAt  }
+export type ORDER_BY_NUMBER_QUERY_RESULT = {
+  _id: string;
+  orderNumber: string | null;
+  clerkUserId: string | null;
+  customerInfo: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    address: {
+      line1: string | null;
+      line2: string | null;
+      city: string | null;
+      state: string | null;
+      pincode: string | null;
+      country: string | null;
+    } | null;
+  } | null;
+  lineItems: Array<{
+    _key: string;
+    productId: string | null;
+    productName: string | null;
+    colorVariant: string | null;
+    colorVariantSlug: string | null;
+    size: string | null;
+    qty: number | null;
+    priceSnapshot: number | null;
+    sku: string | null;
+  }> | null;
+  subtotal: number | null;
+  shippingCost: number | null;
+  total: number | null;
+  currency: string | null;
+  paymentStatus: "failed" | "paid" | "pending" | "refunded" | null;
+  status:
+    | "cancelled"
+    | "delivered"
+    | "paid"
+    | "pending"
+    | "processing"
+    | "refunded"
+    | "shipped"
+    | null;
+  paymentId: string | null;
+  razorpayOrderId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+} | null;
+
+// Source: sanity/lib/queries.ts
+// Variable: ORDER_BY_RAZORPAY_ORDER_ID_QUERY
+// Query: *[_type == "order" && razorpayOrderId == $razorpayOrderId][0]{    _id,    orderNumber,    paymentStatus,    status,    lineItems[]{      _key,      productId,      productName,      colorVariant,      colorVariantSlug,      size,      qty,      priceSnapshot    },    subtotal,    shippingCost,    total,    currency,    customerInfo{      name, email, phone,      address{ line1, line2, city, state, pincode, country }    }  }
+export type ORDER_BY_RAZORPAY_ORDER_ID_QUERY_RESULT = {
+  _id: string;
+  orderNumber: string | null;
+  paymentStatus: "failed" | "paid" | "pending" | "refunded" | null;
+  status:
+    | "cancelled"
+    | "delivered"
+    | "paid"
+    | "pending"
+    | "processing"
+    | "refunded"
+    | "shipped"
+    | null;
+  lineItems: Array<{
+    _key: string;
+    productId: string | null;
+    productName: string | null;
+    colorVariant: string | null;
+    colorVariantSlug: string | null;
+    size: string | null;
+    qty: number | null;
+    priceSnapshot: number | null;
+  }> | null;
+  subtotal: number | null;
+  shippingCost: number | null;
+  total: number | null;
+  currency: string | null;
+  customerInfo: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    address: {
+      line1: string | null;
+      line2: string | null;
+      city: string | null;
+      state: string | null;
+      pincode: string | null;
+      country: string | null;
+    } | null;
+  } | null;
+} | null;
+
+// Source: sanity/lib/queries.ts
 // Variable: ORDERS_BY_USER_QUERY
-// Query: *[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {    _id,    orderNumber,    lineItems,    total,    status,    createdAt  }
+// Query: *[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {    _id,    orderNumber,    lineItems[]{      _key,      productName,      colorVariant,      size,      qty,      priceSnapshot    },    subtotal,    shippingCost,    total,    paymentStatus,    status,    createdAt  }
 export type ORDERS_BY_USER_QUERY_RESULT = Array<{
   _id: string;
   orderNumber: string | null;
   lineItems: Array<{
-    productId?: string;
-    productName?: string;
-    colorVariant?: string;
-    size?: string;
-    qty?: number;
-    priceSnapshot?: number;
     _key: string;
+    productName: string | null;
+    colorVariant: string | null;
+    size: string | null;
+    qty: number | null;
+    priceSnapshot: number | null;
   }> | null;
+  subtotal: number | null;
+  shippingCost: number | null;
   total: number | null;
+  paymentStatus: "failed" | "paid" | "pending" | "refunded" | null;
   status:
     | "cancelled"
     | "delivered"
@@ -575,6 +701,9 @@ declare module "@sanity/client" {
     '*[_type == "product" && defined(slug.current)]{ "slug": slug.current }': ALL_PRODUCT_SLUGS_QUERY_RESULT;
     '*[_type == "category"] | order(name asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    description\n  }': CATEGORIES_QUERY_RESULT;
     '*[_type == "siteSettings" && _id == "siteSettings-singleton"][0]{\n    _id,\n    storeName,\n    supportEmail,\n    logo,\n    socialLinks,\n    footerTagline\n  }': SITE_SETTINGS_QUERY_RESULT;
-    '*[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {\n    _id,\n    orderNumber,\n    lineItems,\n    total,\n    status,\n    createdAt\n  }': ORDERS_BY_USER_QUERY_RESULT;
+    '*[_type == "product" && _id in $ids]{\n    _id,\n    name,\n    price,\n    compareAtPrice,\n    "colorVariants": colorVariants[]{\n      _key,\n      name,\n      "slug": slug.current,\n      sizes[]{ size, stock, sku }\n    }\n  }': PRODUCTS_BY_IDS_QUERY_RESULT;
+    '*[_type == "order" && orderNumber == $orderNumber][0]{\n    _id,\n    orderNumber,\n    clerkUserId,\n    customerInfo{\n      name, email, phone,\n      address{ line1, line2, city, state, pincode, country }\n    },\n    lineItems[]{\n      _key,\n      productId,\n      productName,\n      colorVariant,\n      colorVariantSlug,\n      size,\n      qty,\n      priceSnapshot,\n      sku\n    },\n    subtotal,\n    shippingCost,\n    total,\n    currency,\n    paymentStatus,\n    status,\n    paymentId,\n    razorpayOrderId,\n    createdAt,\n    updatedAt\n  }': ORDER_BY_NUMBER_QUERY_RESULT;
+    '*[_type == "order" && razorpayOrderId == $razorpayOrderId][0]{\n    _id,\n    orderNumber,\n    paymentStatus,\n    status,\n    lineItems[]{\n      _key,\n      productId,\n      productName,\n      colorVariant,\n      colorVariantSlug,\n      size,\n      qty,\n      priceSnapshot\n    },\n    subtotal,\n    shippingCost,\n    total,\n    currency,\n    customerInfo{\n      name, email, phone,\n      address{ line1, line2, city, state, pincode, country }\n    }\n  }': ORDER_BY_RAZORPAY_ORDER_ID_QUERY_RESULT;
+    '*[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {\n    _id,\n    orderNumber,\n    lineItems[]{\n      _key,\n      productName,\n      colorVariant,\n      size,\n      qty,\n      priceSnapshot\n    },\n    subtotal,\n    shippingCost,\n    total,\n    paymentStatus,\n    status,\n    createdAt\n  }': ORDERS_BY_USER_QUERY_RESULT;
   }
 }

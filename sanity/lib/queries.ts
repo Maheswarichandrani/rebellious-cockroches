@@ -97,12 +97,102 @@ export const SITE_SETTINGS_QUERY = defineQuery(
   }`
 )
 
-export const ORDERS_BY_USER_QUERY = defineQuery(
-  `*[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {
+// ── Checkout queries ─────────────────────────────────────────────────────────
+
+export const PRODUCTS_BY_IDS_QUERY = defineQuery(
+  `*[_type == "product" && _id in $ids]{
+    _id,
+    name,
+    price,
+    compareAtPrice,
+    "colorVariants": colorVariants[]{
+      _key,
+      name,
+      "slug": slug.current,
+      sizes[]{ size, stock, sku }
+    }
+  }`
+)
+
+export const ORDER_BY_NUMBER_QUERY = defineQuery(
+  `*[_type == "order" && orderNumber == $orderNumber][0]{
     _id,
     orderNumber,
-    lineItems,
+    clerkUserId,
+    customerInfo{
+      name, email, phone,
+      address{ line1, line2, city, state, pincode, country }
+    },
+    lineItems[]{
+      _key,
+      productId,
+      productName,
+      colorVariant,
+      colorVariantSlug,
+      size,
+      qty,
+      priceSnapshot,
+      sku
+    },
+    subtotal,
+    shippingCost,
     total,
+    currency,
+    paymentStatus,
+    status,
+    paymentId,
+    razorpayOrderId,
+    createdAt,
+    updatedAt
+  }`
+)
+
+export const ORDER_BY_RAZORPAY_ORDER_ID_QUERY = defineQuery(
+  `*[_type == "order" && razorpayOrderId == $razorpayOrderId][0]{
+    _id,
+    orderNumber,
+    clerkUserId,
+    paymentStatus,
+    status,
+    lineItems[]{
+      _key,
+      productId,
+      productName,
+      colorVariant,
+      colorVariantSlug,
+      size,
+      qty,
+      priceSnapshot
+    },
+    subtotal,
+    shippingCost,
+    total,
+    currency,
+    customerInfo{
+      name, email, phone,
+      address{ line1, line2, city, state, pincode, country }
+    }
+  }`
+)
+
+// ── Account / orders ─────────────────────────────────────────────────────────
+
+export const ORDERS_BY_USER_QUERY = defineQuery(
+  `*[_type == "order" && (clerkUserId == $userId || customerInfo.email == $email)] | order(createdAt desc) {
+    _id,
+    orderNumber,
+    lineItems[]{
+      _key,
+      productName,
+      colorVariant,
+      size,
+      qty,
+      priceSnapshot
+    },
+    subtotal,
+    shippingCost,
+    total,
+    paymentStatus,
     status,
     createdAt
   }`

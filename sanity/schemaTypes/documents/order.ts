@@ -7,27 +7,25 @@ export const orderType = defineType({
   type: 'document',
   icon: ClipboardIcon,
   fields: [
-    defineField({
-      name: 'orderNumber',
-      type: 'string',
-      readOnly: true,
-    }),
+    defineField({ name: 'orderNumber',  type: 'string',   readOnly: true }),
+    defineField({ name: 'clerkUserId',  type: 'string',   readOnly: true }),
     defineField({
       name: 'customerInfo',
       type: 'object',
       fields: [
-        defineField({ name: 'name', type: 'string' }),
+        defineField({ name: 'name',  type: 'string' }),
         defineField({ name: 'email', type: 'string' }),
         defineField({ name: 'phone', type: 'string' }),
         defineField({
           name: 'address',
           type: 'object',
           fields: [
-            defineField({ name: 'line1', type: 'string' }),
-            defineField({ name: 'line2', type: 'string' }),
-            defineField({ name: 'city', type: 'string' }),
-            defineField({ name: 'state', type: 'string' }),
-            defineField({ name: 'pincode', type: 'string' }),
+            defineField({ name: 'line1',    type: 'string' }),
+            defineField({ name: 'line2',    type: 'string' }),
+            defineField({ name: 'city',     type: 'string' }),
+            defineField({ name: 'state',    type: 'string' }),
+            defineField({ name: 'pincode',  type: 'string' }),
+            defineField({ name: 'country',  type: 'string' }),
           ],
         }),
       ],
@@ -40,52 +38,62 @@ export const orderType = defineType({
         defineArrayMember({
           type: 'object',
           fields: [
-            defineField({ name: 'productId', type: 'string' }),
-            defineField({ name: 'productName', type: 'string' }),
-            defineField({ name: 'colorVariant', type: 'string' }),
-            defineField({ name: 'size', type: 'string' }),
-            defineField({ name: 'qty', type: 'number' }),
-            defineField({ name: 'priceSnapshot', type: 'number' }),
+            defineField({ name: 'productId',        type: 'string' }),
+            defineField({ name: 'productName',      type: 'string' }),
+            defineField({ name: 'colorVariant',     type: 'string' }),
+            defineField({ name: 'colorVariantSlug', type: 'string' }),
+            defineField({ name: 'size',             type: 'string' }),
+            defineField({ name: 'qty',              type: 'number' }),
+            defineField({ name: 'priceSnapshot',    type: 'number' }),
+            defineField({ name: 'sku',              type: 'string' }),
           ],
           preview: {
-            select: {
-              title: 'productName',
-              subtitle: 'qty',
-              color: 'colorVariant',
-              size: 'size',
-            },
+            select: { title: 'productName', subtitle: 'qty', color: 'colorVariant', size: 'size' },
             prepare({ title, subtitle, color, size }) {
-              return {
-                title: `${title}`,
-                subtitle: `${color} / ${size} × ${subtitle}`,
-              }
+              return { title, subtitle: `${color} / ${size} × ${subtitle}` }
             },
           },
         }),
       ],
     }),
-    defineField({ name: 'subtotal', type: 'number', readOnly: true }),
-    defineField({ name: 'total', type: 'number', readOnly: true }),
-    defineField({ name: 'paymentId', type: 'string', readOnly: true }),
-    defineField({ name: 'razorpayOrderId', type: 'string', readOnly: true }),
+    defineField({ name: 'subtotal',     type: 'number',   readOnly: true }),
+    defineField({ name: 'shippingCost', type: 'number',   readOnly: true }),
+    defineField({ name: 'total',        type: 'number',   readOnly: true }),
+    defineField({ name: 'currency',     type: 'string',   readOnly: true, initialValue: 'INR' }),
     defineField({
-      name: 'status',
+      name: 'paymentStatus',
       type: 'string',
       options: {
         list: [
-          { title: 'Pending', value: 'pending' },
-          { title: 'Paid', value: 'paid' },
-          { title: 'Processing', value: 'processing' },
-          { title: 'Shipped', value: 'shipped' },
-          { title: 'Delivered', value: 'delivered' },
-          { title: 'Cancelled', value: 'cancelled' },
+          { title: 'Pending',  value: 'pending'  },
+          { title: 'Paid',     value: 'paid'     },
+          { title: 'Failed',   value: 'failed'   },
           { title: 'Refunded', value: 'refunded' },
         ],
       },
       initialValue: 'pending',
     }),
-    defineField({ name: 'clerkUserId', type: 'string', readOnly: true }),
-    defineField({ name: 'createdAt', type: 'datetime', readOnly: true }),
+    defineField({
+      name: 'status',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Pending',    value: 'pending'    },
+          { title: 'Paid',       value: 'paid'       },
+          { title: 'Processing', value: 'processing' },
+          { title: 'Shipped',    value: 'shipped'    },
+          { title: 'Delivered',  value: 'delivered'  },
+          { title: 'Cancelled',  value: 'cancelled'  },
+          { title: 'Refunded',   value: 'refunded'   },
+        ],
+      },
+      initialValue: 'pending',
+    }),
+    defineField({ name: 'razorpayOrderId',  type: 'string', readOnly: true }),
+    defineField({ name: 'paymentId',        type: 'string', readOnly: true }),
+    defineField({ name: 'razorpaySignature',type: 'string', readOnly: true }),
+    defineField({ name: 'createdAt',        type: 'datetime', readOnly: true }),
+    defineField({ name: 'updatedAt',        type: 'datetime', readOnly: true }),
   ],
   orderings: [
     {
@@ -96,14 +104,17 @@ export const orderType = defineType({
   ],
   preview: {
     select: {
-      title: 'orderNumber',
-      name: 'customerInfo.name',
-      status: 'status',
+      title:   'orderNumber',
+      name:    'customerInfo.name',
+      status:  'status',
+      payment: 'paymentStatus',
+      total:   'total',
     },
-    prepare({ title, name, status }) {
+    prepare({ title, name, status, payment, total }) {
+      const icon = payment === 'paid' ? '✓' : payment === 'failed' ? '✗' : '○'
       return {
-        title: title ?? 'Draft order',
-        subtitle: `${name ?? 'Guest'} — ${status ?? 'pending'}`,
+        title:    `${icon} ${title ?? 'Draft order'}`,
+        subtitle: `${name ?? 'Guest'} — ${status ?? 'pending'} — ₹${total?.toLocaleString('en-IN') ?? '0'}`,
       }
     },
   },
