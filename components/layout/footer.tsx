@@ -1,8 +1,7 @@
 import Link from "next/link"
-import { FaFacebook, FaInstagram, FaYoutube, FaTiktok, FaXTwitter, FaArrowRight } from "react-icons/fa6"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { FaFacebook, FaInstagram, FaYoutube, FaTiktok, FaXTwitter } from "react-icons/fa6"
 import { Separator } from "@/components/ui/separator"
+import { NewsletterForm } from "@/components/layout/newsletter-form"
 
 export function Footer() {
     const iconColor = "text-muted-foreground hover:text-foreground transition-colors"
@@ -24,23 +23,7 @@ export function Footer() {
                         </div>
 
                         <div className="w-full md:w-auto md:min-w-[360px]">
-                            <form className="relative flex items-center w-full" >
-                                <Input
-                                    type="email"
-                                    placeholder="Email address"
-                                    className="w-full rounded-full h-12 px-6 pr-14 text-sm bg-transparent"
-                                    required
-                                />
-                                <Button
-                                    type="submit"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full h-9 w-9 text-foreground/80 hover:bg-accent hover:text-foreground"
-                                    aria-label="Subscribe"
-                                >
-                                    <FaArrowRight size={14} />
-                                </Button>
-                            </form>
+                            <NewsletterForm />
                         </div>
                     </div>
 
