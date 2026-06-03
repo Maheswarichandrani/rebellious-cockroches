@@ -7,10 +7,18 @@ import { OrderStatusUpdate } from '@/lib/email/templates/order-status-update'
 // Statuses that warrant a customer email
 const NOTIFIABLE_STATUSES = new Set(['processing', 'shipped', 'delivered', 'cancelled'])
 
-function verifySignature(rawBody: string, signature: string, secret: string): boolean {
+// Sanity header format: "t=<unix_ts>,v1=<hex_signature>"
+// Signed payload: "<timestamp>.<rawBody>"
+function verifySignature(rawBody: string, header: string, secret: string): boolean {
   try {
-    const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
-    const a = Buffer.from(signature, 'hex')
+    const parts = Object.fromEntries(header.split(',').map(p => p.split('=')))
+    const timestamp = parts['t']
+    const v1 = parts['v1']
+    if (!timestamp || !v1) return false
+
+    const signed   = `${timestamp}.${rawBody}`
+    const expected = createHmac('sha256', secret).update(signed).digest('hex')
+    const a = Buffer.from(v1, 'hex')
     const b = Buffer.from(expected, 'hex')
     if (a.length !== b.length) return false
     return timingSafeEqual(a, b)

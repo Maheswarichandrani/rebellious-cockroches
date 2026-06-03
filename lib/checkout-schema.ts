@@ -26,9 +26,9 @@ const billingAddressFields = {
 export const checkoutSchema = z
   .object({
     email:                       z.string().email('Enter a valid email address').max(200).trim(),
-    newsletterOptIn:             z.boolean().default(false),
+    newsletterOptIn:             z.boolean(),
     shippingMethodId:            z.string().min(1, 'Select a shipping method'),
-    billingAddressSameAsShipping: z.boolean().default(true),
+    billingAddressSameAsShipping: z.boolean(),
     ...addressFields,
     ...billingAddressFields,
   })

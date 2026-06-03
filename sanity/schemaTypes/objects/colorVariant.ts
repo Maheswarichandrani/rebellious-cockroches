@@ -27,7 +27,7 @@ export const colorVariantType = defineType({
       of: [
         defineArrayMember({
           type: 'image',
-          options: { hotspot: true, modal: { type: 'inline' } },
+          options: { hotspot: true },
           fields: [
             defineField({
               name: 'alt',
