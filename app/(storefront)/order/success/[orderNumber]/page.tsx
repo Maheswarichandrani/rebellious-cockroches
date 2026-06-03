@@ -176,13 +176,13 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             href="/shop"
-            className="flex-1 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-6 text-xs font-bold uppercase tracking-[0.12em] hover:bg-primary/90 transition-colors"
+            className="flex-1 flex items-center justify-center rounded-md bg-primary text-primary-foreground h-12 sm:h-10 px-6 text-xs font-bold uppercase tracking-[0.12em] hover:bg-primary/90 transition-colors"
           >
             Continue Shopping
           </Link>
           <Link
             href="/track-order"
-            className="flex-1 inline-flex items-center justify-center rounded-md border border-border bg-card text-foreground h-10 px-6 text-xs font-bold uppercase tracking-[0.12em] hover:bg-accent transition-colors"
+            className="flex-1 flex items-center justify-center rounded-md border border-border bg-card text-foreground h-12 sm:h-10 px-6 text-xs font-bold uppercase tracking-[0.12em] hover:bg-accent transition-colors"
           >
             Track Order
           </Link>

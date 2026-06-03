@@ -155,7 +155,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           <motion.div
             className={cn(
               'fixed left-1/2 top-[10%] z-50',
-              'mx-4 w-[calc(100%-2rem)] max-w-[680px]',
+              'w-[calc(100%-2rem)] max-w-[680px]',
               '-translate-x-1/2 overflow-hidden rounded-xl',
               'bg-background shadow-2xl ring-1 ring-border/50'
             )}

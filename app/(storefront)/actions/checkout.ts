@@ -23,20 +23,20 @@ import { NewsletterWelcome } from '@/lib/email/templates/newsletter-welcome'
 
 const createOrderInput = z.object({
   shippingInfo: checkoutSchema,
-  items:        z.array(cartItemInputSchema).min(1, 'Cart is empty'),
+  items: z.array(cartItemInputSchema).min(1, 'Cart is empty'),
 })
 
 export type CreateOrderInput = z.infer<typeof createOrderInput>
 
 export type CreateOrderResult =
   | {
-      success:         true
-      razorpayOrderId: string
-      amount:          number
-      currency:        string
-      orderNumber:     string
-      keyId:           string
-    }
+    success: true
+    razorpayOrderId: string
+    amount: number
+    currency: string
+    orderNumber: string
+    keyId: string
+  }
   | { success: false; error: string }
 
 export async function createCheckoutOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -72,14 +72,14 @@ export async function createCheckoutOrder(input: CreateOrderInput): Promise<Crea
 
   // ── Validate each cart item against live Sanity data ───────────────────────
   type ValidatedItem = {
-    productId:        string
-    productName:      string
-    colorVariant:     string
+    productId: string
+    productName: string
+    colorVariant: string
     colorVariantSlug: string
-    size:             string
-    qty:              number
-    priceSnapshot:    number
-    sku:              string | null
+    size: string
+    qty: number
+    priceSnapshot: number
+    sku: string | null
   }
 
   const validatedItems: ValidatedItem[] = []
@@ -104,19 +104,19 @@ export async function createCheckoutOrder(input: CreateOrderInput): Promise<Crea
       const available = sizeEntry.stock ?? 0
       return {
         success: false,
-        error:   `Only ${available} unit${available === 1 ? '' : 's'} of "${product.name}" (${variant.name} / ${item.size}) available.`,
+        error: `Only ${available} unit${available === 1 ? '' : 's'} of "${product.name}" (${variant.name} / ${item.size}) available.`,
       }
     }
 
     validatedItems.push({
-      productId:        product._id,
-      productName:      product.name,
-      colorVariant:     variant.name,
+      productId: product._id,
+      productName: product.name,
+      colorVariant: variant.name,
       colorVariantSlug: variant.slug,
-      size:             item.size,
-      qty:              item.qty,
-      priceSnapshot:    product.price,
-      sku:              sizeEntry.sku ?? null,
+      size: item.size,
+      qty: item.qty,
+      priceSnapshot: product.price,
+      sku: sizeEntry.sku ?? null,
     })
   }
 
@@ -137,9 +137,9 @@ export async function createCheckoutOrder(input: CreateOrderInput): Promise<Crea
   let rzpOrder: any
   try {
     rzpOrder = await razorpay.orders.create({
-      amount:   Math.round(total * 100),
+      amount: Math.round(total * 100),
       currency: 'INR',
-      receipt:  `rcpt_${Date.now()}`,
+      receipt: `rcpt_${Date.now()}`,
     })
   } catch (err) {
     console.error('[checkout] Razorpay order creation failed:', err)
@@ -153,59 +153,59 @@ export async function createCheckoutOrder(input: CreateOrderInput): Promise<Crea
   const billingAddress = shippingInfo.billingAddressSameAsShipping
     ? undefined
     : {
-        name:    `${shippingInfo.billingFirstName ?? ''} ${shippingInfo.billingLastName ?? ''}`.trim(),
-        line1:   shippingInfo.billingAddressLine1 ?? '',
-        line2:   shippingInfo.billingAddressLine2 ?? '',
-        city:    shippingInfo.billingCity ?? '',
-        state:   shippingInfo.billingState ?? '',
-        pincode: shippingInfo.billingPincode ?? '',
-        country: shippingInfo.billingCountry ?? '',
-      }
+      name: `${shippingInfo.billingFirstName ?? ''} ${shippingInfo.billingLastName ?? ''}`.trim(),
+      line1: shippingInfo.billingAddressLine1 ?? '',
+      line2: shippingInfo.billingAddressLine2 ?? '',
+      city: shippingInfo.billingCity ?? '',
+      state: shippingInfo.billingState ?? '',
+      pincode: shippingInfo.billingPincode ?? '',
+      country: shippingInfo.billingCountry ?? '',
+    }
 
   // ── Write order to Sanity ──────────────────────────────────────────────────
   try {
     await writeClient.create({
-      _type:        'order',
+      _type: 'order',
       orderNumber,
-      clerkUserId:  userId ?? null,
+      clerkUserId: userId ?? null,
       customerInfo: {
-        name:  `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+        name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
         email: shippingInfo.email,
         phone: shippingInfo.phone,
         address: {
-          line1:   shippingInfo.addressLine1,
-          line2:   shippingInfo.addressLine2 ?? '',
-          city:    shippingInfo.city,
-          state:   shippingInfo.state,
+          line1: shippingInfo.addressLine1,
+          line2: shippingInfo.addressLine2 ?? '',
+          city: shippingInfo.city,
+          state: shippingInfo.state,
           pincode: shippingInfo.pincode,
           country: shippingInfo.country,
         },
       },
       lineItems: validatedItems.map((i) => ({
-        _key:             Math.random().toString(36).slice(2, 10),
-        productId:        i.productId,
-        productName:      i.productName,
-        colorVariant:     i.colorVariant,
+        _key: Math.random().toString(36).slice(2, 10),
+        productId: i.productId,
+        productName: i.productName,
+        colorVariant: i.colorVariant,
         colorVariantSlug: i.colorVariantSlug,
-        size:             i.size,
-        qty:              i.qty,
-        priceSnapshot:    i.priceSnapshot,
-        sku:              i.sku,
+        size: i.size,
+        qty: i.qty,
+        priceSnapshot: i.priceSnapshot,
+        sku: i.sku,
       })),
       subtotal,
       shippingCost,
       taxAmount,
       total,
-      currency:          'INR',
-      shippingMethodId:  shippingMethod._id,
+      currency: 'INR',
+      shippingMethodId: shippingMethod._id,
       shippingMethodName: shippingMethod.name,
-      newsletterOptIn:   shippingInfo.newsletterOptIn ?? false,
-      billingAddress:    billingAddress ?? null,
-      paymentStatus:     'pending',
-      status:            'pending',
-      razorpayOrderId:   rzpOrder.id,
-      createdAt:         new Date().toISOString(),
-      updatedAt:         new Date().toISOString(),
+      newsletterOptIn: shippingInfo.newsletterOptIn ?? false,
+      billingAddress: billingAddress ?? null,
+      paymentStatus: 'pending',
+      status: 'pending',
+      razorpayOrderId: rzpOrder.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
   } catch (err) {
     console.error('[checkout] Sanity order creation failed:', err)
@@ -213,19 +213,19 @@ export async function createCheckoutOrder(input: CreateOrderInput): Promise<Crea
   }
 
   return {
-    success:         true,
+    success: true,
     razorpayOrderId: rzpOrder.id,
-    amount:          total,
-    currency:        'INR',
+    amount: total,
+    currency: 'INR',
     orderNumber,
-    keyId:           process.env.RAZORPAY_KEY_ID!,
+    keyId: process.env.RAZORPAY_KEY_ID!,
   }
 }
 
 // ── verifyCheckoutPayment ─────────────────────────────────────────────────────
 
 const verifyInput = z.object({
-  razorpayOrderId:   z.string().min(1),
+  razorpayOrderId: z.string().min(1),
   razorpayPaymentId: z.string().min(1),
   razorpaySignature: z.string().min(1),
 })
@@ -235,7 +235,7 @@ export type VerifyPaymentResult =
   | { success: false; error: string }
 
 export async function verifyCheckoutPayment(input: {
-  razorpayOrderId:   string
+  razorpayOrderId: string
   razorpayPaymentId: string
   razorpaySignature: string
 }): Promise<VerifyPaymentResult> {
@@ -296,7 +296,7 @@ export async function verifyCheckoutPayment(input: {
       if (sizeIdx === undefined || sizeIdx === -1) continue
 
       const currentStock = product.colorVariants[variantIdx].sizes[sizeIdx].stock ?? 0
-      const newStock     = Math.max(0, currentStock - (lineItem.qty ?? 0))
+      const newStock = Math.max(0, currentStock - (lineItem.qty ?? 0))
 
       patches.push(
         writeClient
@@ -312,7 +312,7 @@ export async function verifyCheckoutPayment(input: {
 
     if (currentUserId && !order.clerkUserId) {
       try {
-        const clerk    = await clerkClient()
+        const clerk = await clerkClient()
         const clerkUser = await clerk.users.getUser(currentUserId)
         const clerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase()
         const orderEmail = order.customerInfo?.email?.toLowerCase()
@@ -326,11 +326,11 @@ export async function verifyCheckoutPayment(input: {
       writeClient
         .patch(order._id!)
         .set({
-          paymentStatus:     'paid',
-          status:            'paid',
-          paymentId:         razorpayPaymentId,
+          paymentStatus: 'paid',
+          status: 'paid',
+          paymentId: razorpayPaymentId,
           razorpaySignature,
-          updatedAt:         new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           ...(shouldLink ? { clerkUserId: currentUserId } : {}),
         })
         .commit()
@@ -341,7 +341,7 @@ export async function verifyCheckoutPayment(input: {
     console.error('[checkout] Order/stock update failed:', err)
     return {
       success: false,
-      error:   'Order update failed. Please contact support with your payment ID.',
+      error: 'Order update failed. Please contact support with your payment ID.',
     }
   }
 
@@ -349,11 +349,11 @@ export async function verifyCheckoutPayment(input: {
   if (order.newsletterOptIn && order.customerInfo?.email && process.env.RESEND_AUDIENCE_ID) {
     const nameParts = (order.customerInfo.name ?? '').split(' ')
     resend.contacts.create({
-      email:        order.customerInfo.email,
-      firstName:    nameParts[0] ?? '',
-      lastName:     nameParts.slice(1).join(' ') || undefined,
+      email: order.customerInfo.email,
+      firstName: nameParts[0] ?? '',
+      lastName: nameParts.slice(1).join(' ') || undefined,
       unsubscribed: false,
-      audienceId:   process.env.RESEND_AUDIENCE_ID,
+      audienceId: process.env.RESEND_AUDIENCE_ID,
     }).catch((err) => console.error('[newsletter] Resend contact create failed:', err))
 
     // For logged-in users, also persist to Clerk publicMetadata
@@ -368,36 +368,36 @@ export async function verifyCheckoutPayment(input: {
   }
 
   // ── Send emails (all non-blocking) ────────────────────────────────────────
-  const fromEmail  = process.env.RESEND_FROM_EMAIL ?? 'noreply@cjpbrand.in'
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'info@rebelliouscockroach.in'
   const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@cjpbrand.in'
-  const baseUrl    = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
   const customerEmail = order.customerInfo?.email
 
   // 1. Order confirmation → customer
   if (customerEmail) {
     resend.emails.send({
-      from:    `CJP Brand Store <${fromEmail}>`,
-      to:      customerEmail,
+      from: `CJP Brand Store <${fromEmail}>`,
+      to: customerEmail,
       subject: `Order Confirmed — ${order.orderNumber ?? ''}`,
-      html:    await render(OrderConfirmation({ order: { ...order, paymentId: razorpayPaymentId } as any, baseUrl })),
+      html: await render(OrderConfirmation({ order: { ...order, paymentId: razorpayPaymentId } as any, baseUrl })),
     }).catch((err) => console.error('[checkout] Order confirmation email failed:', err))
   }
 
   // 2. New order notification → admin
   resend.emails.send({
-    from:    `CJP Brand Store <${fromEmail}>`,
-    to:      adminEmail,
+    from: `CJP Brand Store <${fromEmail}>`,
+    to: adminEmail,
     subject: `New Order — ${order.orderNumber ?? ''} (${order.total ? `₹${order.total.toLocaleString('en-IN')}` : ''})`,
-    html:    await render(OrderAdmin({ order: order as any, paymentId: razorpayPaymentId, baseUrl })),
+    html: await render(OrderAdmin({ order: order as any, paymentId: razorpayPaymentId, baseUrl })),
   }).catch((err) => console.error('[checkout] Admin order email failed:', err))
 
   // 3. Newsletter welcome → customer (if opted in)
   if (order.newsletterOptIn && customerEmail && order.customerInfo?.name) {
     resend.emails.send({
-      from:    `CJP Brand Store <${fromEmail}>`,
-      to:      customerEmail,
+      from: `CJP Brand Store <${fromEmail}>`,
+      to: customerEmail,
       subject: 'Welcome to the CJP newsletter!',
-      html:    await render(NewsletterWelcome({ name: order.customerInfo.name, baseUrl })),
+      html: await render(NewsletterWelcome({ name: order.customerInfo.name, baseUrl })),
     }).catch((err) => console.error('[checkout] Newsletter welcome email failed:', err))
   }
 

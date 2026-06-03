@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { SlidersHorizontal, LayoutGrid, Rows3, X } from 'lucide-react'
 import {
@@ -123,6 +123,8 @@ export function ShopToolbar({ totalCount, categories }: ShopToolbarProps) {
     router.push(`${pathname}?${p.toString()}`, { scroll: false })
   }, [router, pathname, sort, view])
 
+  const [sheetOpen, setSheetOpen] = useState(false)
+
   const activeCount = [availability, price, category].filter(Boolean).length
 
   const categoryOptions = categories
@@ -137,7 +139,7 @@ export function ShopToolbar({ totalCount, categories }: ShopToolbarProps) {
 
         {/* Mobile: Sheet trigger */}
         <div className="md:hidden">
-          <Sheet>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 text-xs">
                 <SlidersHorizontal size={13} />
@@ -168,7 +170,7 @@ export function ShopToolbar({ totalCount, categories }: ShopToolbarProps) {
                   <FilterSelect
                     placeholder="All"
                     value={availability}
-                    onChange={(v) => setParam('availability', v)}
+                    onChange={(v) => { setParam('availability', v); setSheetOpen(false) }}
                     options={AVAILABILITY_OPTIONS}
                   />
                 </div>
@@ -180,7 +182,7 @@ export function ShopToolbar({ totalCount, categories }: ShopToolbarProps) {
                   <FilterSelect
                     placeholder="All Prices"
                     value={price}
-                    onChange={(v) => setParam('price', v)}
+                    onChange={(v) => { setParam('price', v); setSheetOpen(false) }}
                     options={PRICE_OPTIONS}
                   />
                 </div>
@@ -207,7 +209,7 @@ export function ShopToolbar({ totalCount, categories }: ShopToolbarProps) {
                     variant="outline"
                     size="sm"
                     className="w-full gap-1.5 text-xs"
-                    onClick={clearFilters}
+                    onClick={() => { clearFilters(); setSheetOpen(false) }}
                   >
                     <X size={12} />
                     Clear all filters

@@ -16,17 +16,16 @@ export async function subscribeNewsletter(_prev: State, formData: FormData): Pro
   }
   const { email } = parsed.data
 
-  // if (!process.env.RESEND_AUDIENCE_ID) {
-  //   console.warn('[newsletter] RESEND_AUDIENCE_ID not set')
-  //   return { ok: false, error: 'Newsletter not configured.' }
-  // }
+  if (!process.env.RESEND_AUDIENCE_ID) {
+    console.warn('[newsletter] RESEND_AUDIENCE_ID not set')
+    return { ok: false, error: 'Newsletter not configured.' }
+  }
 
   try {
-
     const res = await resend.contacts.create({
       email,
       unsubscribed: false,
-      // audienceId: process.env.RESEND_AUDIENCE_ID,
+      audienceId: process.env.RESEND_AUDIENCE_ID,
     });
 
 

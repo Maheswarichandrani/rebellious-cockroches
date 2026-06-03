@@ -452,7 +452,6 @@
   inset: 0;
   z-index: 40;
   background: oklch(0 0 0 / 0.45);
-  backdrop-filter: blur(2px);
   transition: opacity 280ms ease;
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -95,6 +95,8 @@ export function CheckoutClient({
   const hasSavedAddresses = savedAddresses.length > 0
 
   // ── State ──────────────────────────────────────────────────────────────────
+  const paidRef = useRef(false)
+
   const [mounted,            setMounted]           = useState(false)
   const [rzpReady,           setRzpReady]          = useState(false)
   const [payStatus,          setPayStatus]         = useState<'idle' | 'processing' | 'verifying'>('idle')
@@ -151,7 +153,7 @@ export function CheckoutClient({
   }, [])
 
   useEffect(() => {
-    if (mounted && items.length === 0) router.replace('/shop')
+    if (mounted && items.length === 0 && !paidRef.current) router.replace('/shop')
   }, [mounted, items.length, router])
 
   // ── Pincode watcher → fetch shipping methods ───────────────────────────────
@@ -295,6 +297,7 @@ export function CheckoutClient({
               }
             }
 
+            paidRef.current = true
             clearCart()
             const encoded = Buffer.from(data.email).toString('base64url')
             router.push(`/order/success/${verification.orderNumber}?email=${encoded}`)
@@ -314,24 +317,6 @@ export function CheckoutClient({
 
   // ── Guards ─────────────────────────────────────────────────────────────────
 
-  if (payStatus === 'verifying') {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-        <p className="text-sm font-medium">Verifying payment…</p>
-        <p className="text-xs text-muted-foreground">Do not close this tab.</p>
-      </div>
-    )
-  }
-
-  if (!mounted || items.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Redirecting…</p>
-      </div>
-    )
-  }
-
   const isProcessing = payStatus === 'processing'
   const canSubmit    = rzpReady && !isProcessing
 
@@ -339,12 +324,28 @@ export function CheckoutClient({
 
   return (
     <>
+      {/* Script renders on first paint so Razorpay CDN loads before mounted guard */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="lazyOnload"
         onLoad={() => setRzpReady(true)}
       />
 
+      {payStatus === 'verifying' && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+          <p className="text-sm font-medium">Verifying payment…</p>
+          <p className="text-xs text-muted-foreground">Do not close this tab.</p>
+        </div>
+      )}
+
+      {payStatus !== 'verifying' && (!mounted || items.length === 0) && (
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-sm text-muted-foreground">Redirecting…</p>
+        </div>
+      )}
+
+      {payStatus !== 'verifying' && mounted && items.length > 0 && (
       <main className="min-h-screen">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
 
@@ -551,7 +552,7 @@ export function CheckoutClient({
                       )} />
 
                       {/* City / State / PIN */}
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <FormField control={form.control} name="city" render={({ field }) => (
                           <FormItem>
                             <FormLabel>City</FormLabel>
@@ -785,7 +786,7 @@ export function CheckoutClient({
                             <FormMessage />
                           </FormItem>
                         )} />
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <FormField control={form.control} name="billingCity" render={({ field }) => (
                             <FormItem>
                               <FormLabel>City</FormLabel>
@@ -958,6 +959,7 @@ export function CheckoutClient({
           </div>
         </div>
       </main>
+      )}
     </>
   )
 }
