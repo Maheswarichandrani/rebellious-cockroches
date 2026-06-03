@@ -299,7 +299,7 @@ export function CheckoutClient({
 
             paidRef.current = true
             clearCart()
-            const encoded = Buffer.from(data.email).toString('base64url')
+            const encoded = btoa(data.email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
             router.push(`/order/success/${verification.orderNumber}?email=${encoded}`)
           } else {
             setPayError(`Payment verification failed: ${verification.error}`)
